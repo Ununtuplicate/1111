@@ -25,12 +25,12 @@ class HeadingBlock(StructBlock):
         ('', 'Select a header size'),
         ('h2', 'H2'),
         ('h3', 'H3'),
-        ('h4', 'H4'),
+        ('h4', 'H4')
     ], blank=True, required=False)
     
     class Meta:
         icon = "title"
-        tempalte = "bocks/heading_block.html"
+        template = "blocks/heading_block.html"
         
 class BlockQuote(StructBlock):
     """

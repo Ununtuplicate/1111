@@ -198,10 +198,149 @@ class NewHomePage(Page):
     def __str__(self):
         return self.title
         
+
+class GalleryPage(Page):
+    """
+    This page lists locations from Collection
+    Q object to list any collection in (/admin/collections/) - no items is ok
+    Can be used for things other than galleries
+    """
+    
+    introduction = models.TextField(
+        help_text='Text to describe this page',
+        blank=True
+    )
+    image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text='Landscape mode only; horizontal width between 1000px and 3000px.'
+    )
+    body = StreamField(
+        BaseStreamBlock(), verbose_name="Page body", blank=True
+    )
+    collection = models.ForeignKey(
+        Collection,
+        limit_choices_to=~models.Q(name__in=['Root']),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text='Select the image collection for this gallery.'
+    )
+    
+    content_panels = Page.content_panels + [
+        FieldPanel('introduction', classname="full"),
+        StreamFieldPanel('body'),
+        ImageChooserPanel('image'),
+        FieldPanel('collection'),
+    ]
+    
+    # Defines what content can be under this parent
+    # Blank = no subpages can be added
+    subpage_types = []
+    
+
+@register_snippet
+class FooterText(models.Model):
+    """
+    This is editable text for site footer
+    Uses decorator 'register_snippet' so that it can be accessed via admin
+    Accessible on template via template tag defined in base/templatetags/navigation_tags.py
+    """
+    body = RichTextField()
+    
+    panels = [
+        FieldPanel('body'),
+    ]
+    
+    def __str__(self):
+        return "Footer text"
+    
+    class Meta:
+        verbose_name_plural = 'Footer Text'
         
         
+@register_snippet
+class People(index.Indexed, ClusterableModel):
+    """
+    Django model to store People objects
+    Uses '@register_snippet' decorator so that it can be accessed via admin 
+        = via Snippets UI (/admin/snippets/base/people)
+        
+    'People' uses 'ClusterableModel'
+        Allows relationship with another model to be stored locally to the 'parent' model 
+        e.g. PageModel
+        until parent is explicitly saved
+        Allows editor to use 'Preview' button (=preview content) without saving relationships to db
+        https://github.com/wagtail/django-modelcluster
+    """
+    first_name = models.CharField("First name", max_length=254)
+    last_name = models.CharField("Last name", max_length=254)
+    job_title = models.CharField("Job title", max_length=254)
+    
+    image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+'
+    )
+    
+    panels = [
+        FieldPanel('first_name', classname="col6"),
+        FieldPanel('last_name', classname="col6"),
+        FieldPanel('job_title'),
+        ImageChooserPanel('image')
+    ]
+    
+    search_fields = [
+        index.SearchField('first_name'),
+        index.SearchField('last_name'),
+    ]
+    
+    @property
+    def thumb_image(self):
+        # Returns empty string is no profile picture or rendition file can't be found
+        try:
+            return self.image.get_rendition('fill-50x50').img_tag()
+        except:
+            return ''
+        
+    def __str__(self):
+        return '{} {}'.format(self.first_name, self.last_name)
+    
+    class Meta:
+        verbose_name = 'Person'
+        verbose_name_plural = 'People'
         
         
+class CentrumPage(Page):
+    """
+    Replicate of centrumsercalc.pl
+    -Logo inline text,
+    -6 picture gallery media area
+    -Text area
+    """
+    
+    # Logo inline text area
+    image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text='Logo image'
+    )
+    body = StreamField(
+        BaseStreamBlock(), verbose_name="Page body", blank=True
+    )
+    
+    content_panels = Page.content_panels + [
+        ImageChooserPanel('image'),
+        StreamFieldPanel('body'),
+    ]
         
         
         
